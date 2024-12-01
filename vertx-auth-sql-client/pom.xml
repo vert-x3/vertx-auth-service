@@ -77,7 +77,7 @@
     <dependency>
       <groupId>io.agroal</groupId>
       <artifactId>agroal-pool</artifactId>
-      <version>1.12</version>
+      <version>2.2</version>
       <scope>test</scope>
     </dependency>
 
