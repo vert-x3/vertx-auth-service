@@ -134,14 +134,26 @@ public interface OpenIDConnectAuth {
           jwtOptions.setIssuer(json.getString("issuer"));
         }
 
-
-        // reset config
-        config.setSupportedGrantTypes(null);
-
         if (json.containsKey("grant_types_supported")) {
+          // reset config
+          config.setSupportedGrantTypes(null);
           // optional config
           JsonArray flows = json.getJsonArray("grant_types_supported");
           flows.forEach(el -> config.addSupportedGrantType((String) el));
+        }
+
+        // configure client authentication
+        if (json.containsKey("token_endpoint_auth_methods_supported")) {
+          // optional
+          JsonArray methods = json.getJsonArray("token_endpoint_auth_methods_supported");
+          if (methods.contains("client_secret_basic")) {
+            // preferred
+            config.setUseBasicAuthorization(true);
+          } else if (methods.contains("client_secret_post")) {
+            config.setUseBasicAuthorization(false);
+          } else {
+            // default to what is defined by the callee
+          }
         }
 
         try {

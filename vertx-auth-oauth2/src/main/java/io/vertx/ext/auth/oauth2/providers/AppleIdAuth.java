@@ -80,7 +80,8 @@ public interface AppleIdAuth extends OpenIDConnectAuth {
         .setTokenPath("/auth/token")
         .setRevocationPath("/auth/revoke")
         .setAuthorizationPath("/auth/authorize")
-        .setJwkPath("/auth/keys"));
+        .setJwkPath("/auth/keys")
+        .setUseBasicAuthorization(false));
   }
 
   /**
@@ -116,7 +117,6 @@ public interface AppleIdAuth extends OpenIDConnectAuth {
       vertx,
       new OAuth2Options(config)
         .setSite(site)
-        .setClientSecret(clientSecret)
-        .setUseBasicAuthorization(false));
+        .setClientSecret(clientSecret));
   }
 }
