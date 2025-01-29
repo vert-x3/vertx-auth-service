@@ -20,6 +20,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.ext.auth.JWTOptions;
 import io.vertx.ext.auth.oauth2.OAuth2Auth;
 import io.vertx.ext.auth.oauth2.OAuth2Options;
 
@@ -37,10 +38,11 @@ public interface AmazonCognitoAuth extends OpenIDConnectAuth {
    * @param region       the region to use
    * @param clientId     the client id given to you by Amazon Cognito
    * @param clientSecret the client secret given to you by Amazon Cognito
+   * @param domain       the Cognito domain
    * @param guid         the guid of your application given to you by Amazon Cognito
    */
-  static OAuth2Auth create(Vertx vertx, String region, String clientId, String clientSecret, String guid) {
-    return create(vertx, region, clientId, clientSecret, guid, new HttpClientOptions());
+  static OAuth2Auth create(Vertx vertx, String region, String clientId, String clientSecret, String domain, String guid) {
+    return create(vertx, region, clientId, clientSecret, domain, guid, new HttpClientOptions());
   }
 
   /**
@@ -49,13 +51,17 @@ public interface AmazonCognitoAuth extends OpenIDConnectAuth {
    * @param region            the region to use
    * @param clientId          the client id given to you by Amazon Cognito
    * @param clientSecret      the client secret given to you by Amazon Cognito
+   * @param domain            the Cognito domain
    * @param userPoolId        the userPoolId of your application given to you by Amazon Cognito
    * @param httpClientOptions custom http client options
    */
-  static OAuth2Auth create(Vertx vertx, String region, String clientId, String clientSecret, String userPoolId, HttpClientOptions httpClientOptions) {
+  static OAuth2Auth create(Vertx vertx, String region, String clientId, String clientSecret, String domain, String userPoolId, HttpClientOptions httpClientOptions) {
     if (region == null) {
       throw new IllegalStateException("region cannot be null");
     }
+
+    final String siteBase = String.format("https://cognito-idp.%s.amazonaws.com", region);
+    final String domainUrl = String.format("https://%s.auth.%s.amazoncognito.com", domain, region);
 
     return
       OAuth2Auth.create(vertx, new OAuth2Options()
@@ -63,13 +69,15 @@ public interface AmazonCognitoAuth extends OpenIDConnectAuth {
         .setClientId(clientId)
         .setClientSecret(clientSecret)
         .setTenant(userPoolId)
-        .setSite("https://cognito-idp." + region + ".amazonaws.com/{tenant}")
-        .setTokenPath("/oauth2/token")
-        .setAuthorizationPath("/oauth2/authorize")
-        .setUserInfoPath("/oauth2/userInfo")
-        .setJwkPath("/.well-known/jwks.json")
-        .setLogoutPath("/logout")
-        .setScopeSeparator("+"));
+        .setSite(siteBase + "/{tenant}")
+        .setTokenPath(domainUrl + "/oauth2/token")
+        .setAuthorizationPath(domainUrl + "/oauth2/authorize")
+        .setUserInfoPath(domainUrl + "/oauth2/userInfo")
+        .setRevocationPath(domainUrl + "/oauth/revoke")
+        .setJwkPath(siteBase + "/{tenant}/.well-known/jwks.json")
+        .setLogoutPath(domainUrl + "/logout")
+        .setScopeSeparator(" ")
+        .setJWTOptions(new JWTOptions().setIssuer(siteBase + "/{tenant}")));
   }
 
   /**
